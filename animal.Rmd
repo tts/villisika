@@ -3,22 +3,25 @@ title: "Wild boars around here"
 output: html_notebook
 ---
 
-
 ```{r start}
 library(readxl)
-library(dplyr, suppressPackageStartupMessages())
+library(dplyr)
 library(naniar)
+library(lubridate)
+library(dygraphs)
+library(leaflet)
+library(xts)
 ```
 
-Inspired by [recent news on a fortcoming book by Hannah Lutz](https://www.hbl.fi/artikel/vildsvin-som-vag-till-sjalvkannedom/), and the notebook on [Raccoon dog in Sweden](https://github.com/christopherkullenberg/AnalysisportalNotebooks/blob/master/mardhund.ipynb) by Christopher Kullenberg, I decided to have a look on how the boar (vildsvin in Swedish, villisika in Finnish) is doing around here. Based on a number of stays in Italian and French countryside, I can confirm that yes, there are wild boars in mainland Europe. In Finland, I haven't seen a single one yet. Perhaps they are mostly along the Eastern border?
+Inspired by recent news on a [fortcoming book by Hannah Lutz](https://www.hbl.fi/artikel/vildsvin-som-vag-till-sjalvkannedom/), and the notebook on [Raccoon dog in Sweden](https://github.com/christopherkullenberg/AnalysisportalNotebooks/blob/master/mardhund.ipynb) by Christopher Kullenberg, I decided to have a look on how the wild boar (vildsvin in Swedish, villisika in Finnish) is doing around here. Based on a few stays in Italian and French countryside, I can confirm that yes, there are wild boars in mainland Europe. In Finland, I haven't seen a single one yet. Perhaps they wander along the Eastern border?
 
 While at it, I decided to make use of the new R Notebook by RStudio. Having done a little R Markdown'ing before, watching [a helpful 45 min video tutorial](https://www.rstudio.com/resources/webinars/introducing-notebooks-with-r-markdown/) gave a head-start.
 
 First I went to [The Analysis portal for biodiversity data](https://www.analysisportal.se) like Christopher did, and downloaded data on this *Sus scrofa*.
 
-I didn't donwload observations on *Sus scrofa scrofa*, [the Southern subspecies](https://en.wikipedia.org/wiki/Central_European_boar) because I'm not sure whether these are indeed valid. Is rarity committee a thing only ?
+I didn't donwload observations on *Sus scrofa scrofa*, [the Southern subspecies](https://en.wikipedia.org/wiki/Central_European_boar) because I'm not sure whether these observations are indeed valid. Are rarity committees a thing also in mammal watching circles?
 
-The amount of different variables in this citizen science data are impressive.
+The number of different variables in this citizen science data are impressive.
 
 ```{r load, warning=FALSE}
 data <- read_excel("SpeciesObservations.xlsx", sheet = "SLW Data")
@@ -26,9 +29,9 @@ nrow(data)
 colnames(data)
 ```
 
-Yet, seemingly many NA's too. What data am I expected to NOT find? Here, the brand new [naniar package](https://github.com/njtierney/naniar) is of great help. 
+Yet, seemingly many empty cells. What data should I expect NOT to find? To answer this question, the brand new [naniar package](https://github.com/njtierney/naniar) is of great help. 
 
-Let's take the first half of the variables first, and sort them by missingness.
+Let's take the first half of the columns first, and sort them by missingness.
 
 ```{r missing1}
 vis_miss(data[ , 1:as.integer(ncol(data)/2)], sort_miss = TRUE) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 48, 
@@ -43,7 +46,94 @@ vis_miss(data[ , as.integer(ncol(data)/2+1):ncol(data)], sort_miss = TRUE) + ggp
         vjust = 1, hjust = 1, size = 7))
 ```
 
-It looks like data is a tad patchy on how many animals were seen, what they were doing etc. This is understandable. On the other hand, the core data, if you like, such as location, date etc. are well represented. I'd guess that most present values 
+It looks like the dataset is a little patchy on extra information like the number of observed animals, what they were doing etc. This is understandable. On the other hand, the core details if you like such as location and date are well represented. I'd guess that some of these fields are mandatory.
+
+```{r timeline}
+data$Start <- as.Date(data$Start, format = "%Y-%m-%d")
+
+dailysums <- data %>%
+  rename(Date = Start) %>% 
+  group_by(Date) %>% 
+  summarise(Observations = n()) 
+  
+dailysums <- as.data.frame(dailysums, stringsAsFactors = FALSE)
+
+# Pad dates
+alltime <- seq.Date(min(dailysums$Date), max(dailysums$Date), by="day")
+alltime_df <- data.frame(Date = alltime)
+alltime_dailysums <- full_join(alltime_df, dailysums, by=c("Date"="Date"))
+alltime_dailysums$Observations <- ifelse(is.na(alltime_dailysums$Observations), 0, alltime_dailysums$Observations)
+
+rownames(alltime_dailysums) <- alltime_dailysums[[1]]
+dailysums.xts <- as.xts(alltime_dailysums, dateFormat = "Date")
+
+dygraph(dailysums.xts) %>%
+  dyHighlight(highlightCircleSize = 5, 
+              highlightSeriesBackgroundAlpha = 0.2,
+              hideOnMouseOut = FALSE) %>% 
+  # https://www.timeanddate.com/holidays/sweden/midsummer-day
+  dyEvent("2010-06-26", "Midsummer", labelLoc = "top") %>% 
+  dyEvent("2011-06-25", "Midsummer", labelLoc = "top") %>% 
+  dyEvent("2012-06-23", "Midsummer", labelLoc = "top") %>% 
+  dyEvent("2013-06-22", "Midsummer", labelLoc = "top") %>% 
+  dyEvent("2014-06-21", "Midsummer", labelLoc = "top") %>% 
+  dyEvent("2015-06-20", "Midsummer", labelLoc = "top") %>% 
+  dyEvent("2016-06-25", "Midsummer", labelLoc = "top") %>%
+  dyEvent("2010-12-24", "Christmas", labelLoc = "top") %>% 
+  dyEvent("2011-12-24", "Christmas", labelLoc = "top") %>% 
+  dyEvent("2012-12-24", "Christmas", labelLoc = "top") %>% 
+  dyEvent("2013-12-24", "Christmas", labelLoc = "top") %>% 
+  dyEvent("2014-12-24", "Christmas", labelLoc = "top") %>% 
+  dyEvent("2015-12-24", "Christmas", labelLoc = "top") %>% 
+  dyEvent("2016-12-24", "Christmas", labelLoc = "top") %>%
+  dyOptions(stepPlot=FALSE,
+            connectSeparatedPoints = FALSE,
+            colors = RColorBrewer::brewer.pal(3, "Set2")) 
 
 
-Plots against factor about what the animals where doing, where they adults, cubs etc.
+```
+
+Select a region to zoom in. This way, you can contemplate on whether the sightings happened to occur around bigger public holidays, say.
+
+Where in Sweden have people seen these animals? Was it a herd, or just few individuals? What were they doing? 
+
+```{r map}
+
+data <- data %>% 
+  mutate(Lat = as.numeric(gsub(",", ".", DecimalLatitude))) %>% 
+  mutate(Lon = as.numeric(gsub(",", ".", DecimalLongitude))) %>% 
+  mutate(Time = EventTime) %>% 
+  mutate(Count = ifelse(is.na(IndividualCount), 0, as.integer(IndividualCount))) %>%
+  mutate(Quantity = ifelse(is.na(Quantity), "N/A", Quantity)) %>%
+  mutate(LifeStage = ifelse(is.na(LifeStage), "N/A", LifeStage)) %>% 
+  mutate(Behavior = ifelse(is.na(Behavior), "N/A", Behavior)) %>% 
+  mutate(Sex = ifelse(is.na(Sex), "N/A", Sex)) %>% 
+  mutate(OccurrenceRemarks = ifelse(is.na(OccurrenceRemarks), "N/A", OccurrenceRemarks))
+
+max <- data %>% 
+  arrange(desc(Count)) %>% 
+  head()
+
+leaflet(data) %>% 
+  addTiles() %>%
+  addCircles(lng = ~Lon, lat = ~Lat, weight = 2,
+    radius = ~sqrt(Count) * 30, popup = paste(sep = "<br/>", 
+                                          paste0("County: ",data$County), 
+                                          paste0("Date: ", data$Start), 
+                                          paste0("Time: ", data$Time),
+                                          paste0("Quantity: ", data$Quantity),
+                                          paste0("Life stage: ", data$LifeStage),
+                                          paste0("Behavior: ", data$Behavior), 
+                                          paste0("Sex: ", data$Sex), 
+                                          paste0("Remarks: ", data$OccurrenceRemarks))) %>% 
+  addMarkers(lng = max$Lon, lat = max$Lat, popup = paste(sep = "<br/>", 
+                                          paste0("County: ",max$County), 
+                                          paste0("Date: ", max$Start), 
+                                          paste0("Time: ", data$Time),
+                                          paste0("Quantity: ", max$Quantity),
+                                          paste0("Life stage: ", max$LifeStage),
+                                          paste0("Behavior: ", max$Behavior), 
+                                          paste0("Sex: ", max$Sex), 
+                                          paste0("Remarks: ", max$OccurrenceRemarks)))
+```
+
