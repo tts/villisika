@@ -3,7 +3,7 @@ title: "Wild boars around here"
 output: html_notebook
 ---
 
-```{r start}
+```{r start, message=FALSE}
 library(readxl)
 library(dplyr)
 library(naniar)
@@ -15,13 +15,9 @@ library(xts)
 
 Inspired by recent news on a [fortcoming book by Hannah Lutz](https://www.hbl.fi/artikel/vildsvin-som-vag-till-sjalvkannedom/), and the notebook on [Raccoon dog in Sweden](https://github.com/christopherkullenberg/AnalysisportalNotebooks/blob/master/mardhund.ipynb) by Christopher Kullenberg, I decided to have a look on how the wild boar (vildsvin in Swedish, villisika in Finnish) is doing around here. Based on a few stays in Italian and French countryside, I can confirm that yes, there are wild boars in mainland Europe. In Finland, I haven't seen a single one yet. Perhaps they wander along the Eastern border?
 
-While at it, I decided to make use of the new R Notebook by RStudio. Having done a little R Markdown'ing before, watching [a helpful 45 min video tutorial](https://www.rstudio.com/resources/webinars/introducing-notebooks-with-r-markdown/) gave a head-start.
+While at it, I decided to make use of the new R Notebook by RStudio. Having done a little R Markdown'ing before, watching [a helpful 45 min video tutorial](https://www.rstudio.com/resources/webinars/introducing-notebooks-with-r-markdown/) gave a head start.
 
 First I went to [The Analysis portal for biodiversity data](https://www.analysisportal.se) like Christopher did, and downloaded data on this *Sus scrofa*.
-
-I didn't donwload observations on *Sus scrofa scrofa*, [the Southern subspecies](https://en.wikipedia.org/wiki/Central_European_boar) because I'm not sure whether these observations are indeed valid. Are rarity committees a thing also in mammal watching circles?
-
-The number of different variables in this citizen science data are impressive.
 
 ```{r load, warning=FALSE}
 data <- read_excel("SpeciesObservations.xlsx", sheet = "SLW Data")
@@ -29,7 +25,7 @@ nrow(data)
 colnames(data)
 ```
 
-Yet, seemingly many empty cells. What data should I expect NOT to find? To answer this question, the brand new [naniar package](https://github.com/njtierney/naniar) is of great help. 
+The number of different variables in this citizen science data is impressive. Yet, seemingly many empty cells. What data should I expect NOT to find? To answer this question, the brand new [naniar package](https://github.com/njtierney/naniar) is of great help. 
 
 Let's take the first half of the columns first, and sort them by missingness.
 
