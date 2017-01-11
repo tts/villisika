@@ -48,6 +48,8 @@ vis_miss(data[ , as.integer(ncol(data)/2+1):ncol(data)], sort_miss = TRUE) + ggp
 
 It looks like the dataset is a little patchy on extra information like the number of observed animals, what they were doing etc. This is understandable. On the other hand, the core details if you like such as location and date are well represented. I'd guess that some of these fields are mandatory.
 
+Next we need to transform dates, and then we can count daily statistics.
+
 ```{r timeline}
 data$Start <- as.Date(data$Start, format = "%Y-%m-%d")
 
@@ -137,3 +139,8 @@ leaflet(data) %>%
                                           paste0("Remarks: ", max$OccurrenceRemarks)))
 ```
 
+Some of the observed groups are astonishingly big. To let these stand out on the map, I put a blue marker on those locations. One of them is in the outskirts of Stockholm, the capital of Sweden! From the popup we learn that here, the number of animals is due to free lunch. They are fed.
+
+The most Northern observation comes near Umeå. 
+
+Finland? This part is yet to be done. First I need to find some open data.
