@@ -1,0 +1,49 @@
+---
+title: "Wild boars around here"
+output: html_notebook
+---
+
+
+```{r start}
+library(readxl)
+library(dplyr, suppressPackageStartupMessages())
+library(naniar)
+```
+
+Inspired by [recent news on a fortcoming book by Hannah Lutz](https://www.hbl.fi/artikel/vildsvin-som-vag-till-sjalvkannedom/), and the notebook on [Raccoon dog in Sweden](https://github.com/christopherkullenberg/AnalysisportalNotebooks/blob/master/mardhund.ipynb) by Christopher Kullenberg, I decided to have a look on how the boar (vildsvin in Swedish, villisika in Finnish) is doing around here. Based on a number of stays in Italian and French countryside, I can confirm that yes, there are wild boars in mainland Europe. In Finland, I haven't seen a single one yet. Perhaps they are mostly along the Eastern border?
+
+While at it, I decided to make use of the new R Notebook by RStudio. Having done a little R Markdown'ing before, watching [a helpful 45 min video tutorial](https://www.rstudio.com/resources/webinars/introducing-notebooks-with-r-markdown/) gave a head-start.
+
+First I went to [The Analysis portal for biodiversity data](https://www.analysisportal.se) like Christopher did, and downloaded data on this *Sus scrofa*.
+
+I didn't donwload observations on *Sus scrofa scrofa*, [the Southern subspecies](https://en.wikipedia.org/wiki/Central_European_boar) because I'm not sure whether these are indeed valid. Is rarity committee a thing only ?
+
+The amount of different variables in this citizen science data are impressive.
+
+```{r load, warning=FALSE}
+data <- read_excel("SpeciesObservations.xlsx", sheet = "SLW Data")
+nrow(data)
+colnames(data)
+```
+
+Yet, seemingly many NA's too. What data am I expected to NOT find? Here, the brand new [naniar package](https://github.com/njtierney/naniar) is of great help. 
+
+Let's take the first half of the variables first, and sort them by missingness.
+
+```{r missing1}
+vis_miss(data[ , 1:as.integer(ncol(data)/2)], sort_miss = TRUE) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 48, 
+        vjust = 1, hjust = 1, size = 7))
+
+```
+
+And then the rest.
+
+```{r missing2}
+vis_miss(data[ , as.integer(ncol(data)/2+1):ncol(data)], sort_miss = TRUE) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 48, 
+        vjust = 1, hjust = 1, size = 7))
+```
+
+It looks like data is a tad patchy on how many animals were seen, what they were doing etc. This is understandable. On the other hand, the core data, if you like, such as location, date etc. are well represented. I'd guess that most present values 
+
+
+Plots against factor about what the animals where doing, where they adults, cubs etc.
