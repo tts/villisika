@@ -103,13 +103,15 @@ dygraph(dailysums.xts) %>%
 
 ```
 
-To zoom in, use the slider, or draw a horizontal region. This way, we can contemplate on whether the sightings are clustered around bigger public holidays, say. 
+To zoom in, use the slider, or draw a horizontal region. 
+
+I added manually some holiday events from recent years. This way, we can investigate whether there are more sightings around Midsummer or Christmas. (Not)
 
 ## Finland
 
 You can search and download animal observation data from the (beta) site of [Finnish Biodiversity Info Facility (FinBIF)](https://beta.laji.fi/observation/map?page=1). To get data, you need to register, and log in. When you have selected a set, an email is sent to you with a link to the downloading site. There is also an [API](https://api.laji.fi/explorer/), nicely documented thanks to [OpenAPI Specification](https://en.wikipedia.org/wiki/OpenAPI_Specification), but because I've got my access token only recently, I haven't had time to check the documentation that much.
 
-Citation for my downloaded dataset http://tun.fi/HBF.AD8DA752-1013-4AA2-8BC5-7AA21F0F4FF5 (haettu 12.1.2017).
+This is my dataset http://tun.fi/HBF.AD8DA752-1013-4AA2-8BC5-7AA21F0F4FF5 (downloaded 12.1.2017).
 
 FinBIF is a joined achievement of several parties, so data includes also information on preserved specimens like skulls. Let's first filter observations.
 
@@ -124,11 +126,11 @@ data_fi <- data_fi %>%
 nrow(data_fi)
 ```
 
-Compared to the Swedish dataset, the number of observations is very modest. Finland is famous for its volunteer birdwatchers, and the amount of longitudinal data from monitoring birds is massive. It is interesting why other animals get much less attention. I'd guess though that as a country, Finland is not a huge exception in this case. It's easy to understand why birding is so popular. Bird species abound, they are relatively easy to find and watch, and only few are nocturnal. Although around 30 bird species can legally be hunted in Finland, I'd say that in general, birds are not considered to be game like mammals. 
+Compared to Swedish data, the number of observations is very modest. Finland is famous for its volunteer birdwatchers, and the amount of longitudinal data from monitoring birds is massive. It is interesting why other animals get much less attention. I'd guess though that as a country, Finland is not a remarkable exception. It's easy to understand why birding is so popular. Birds are relatively easy to find and watch, and only few are nocturnal. Although around 30 species can legally be hunted in Finland, I'd say that in general, birds are not considered game like mammals. 
 
-In Finland, the main source for observational, non-scientific data on mammals is hunting organizations. I'd be more than happy if those citizens who do not hunt, would more actively look around, and register what they see.
+In Finland, the main source for observational, non-scientific data on mammals is hunting organizations. I'd be more than happy if those citizens who do not hunt, would more actively look around, and register what they see. 
 
-Lastly, let's put all data on the map. 
+## Joined map
 
 ```{r map}
 
@@ -177,16 +179,16 @@ leaflet(data_se) %>%
                            paste0("Remarks: ", data_fi$Unit.Notes)))
 ```
 
-The user experience would benefit from reducing the number of data points but here we go. Sorry.
+The user experience would benefit from reducing the number of data points but here we go.
 
 In Sweden, some of the groups are surprisingly big, even in the outskirts of Stockholm! On the map, the biggest recorded herds have a red stroke, the next biggest orange, and the rest are blue.
 
-From the popups of the red circles we learn that the bigger herd, the more this is because of feeding. 
+From the popups of the red circles we learn that the bigger herd, the more this is because of feeding.
 
-The most Northern - and rather lone - observation is near Umeå. As always, sta
+The most Northern - and rather lone - observation is near Umeå. 
 
-Note that in the Finnish dataset, there are few observations that are actually not from Finland at all, but from Estonia, Poland, Russia, and Germany. These ones have no coordinates, so they are not shown on the map. 
+Note that in the Finnish dataset, there are few observations that are actually not from Finland at all, but from Estonia, Poland, Russia, and Germany. These ones have no coordinates, so they are not on the map. 
 
-Estonia is a special case at the moment. Wild boar hunters returning from there are under strict control by the Finnish authorities because of [African swine feaver](http://ec.europa.eu/food/animals/animal-diseases/control-measures/asf/what-is-asf_en). 
+Estonia is a special case at the moment. Finnish hunters returning from wild boar safaris in Estonia are under strict control by the Finnish authorities because of [African swine feaver](http://ec.europa.eu/food/animals/animal-diseases/control-measures/asf/what-is-asf_en). 
 
 
