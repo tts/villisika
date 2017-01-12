@@ -7,30 +7,41 @@ output: html_notebook
 library(readxl)
 library(dplyr)
 library(naniar)
-library(lubridate)
 library(dygraphs)
 library(leaflet)
 library(xts)
 ```
 
-Inspired by recent news on a [fortcoming book by Hannah Lutz](https://www.hbl.fi/artikel/vildsvin-som-vag-till-sjalvkannedom/), and the notebook on [Raccoon dog in Sweden](https://github.com/christopherkullenberg/AnalysisportalNotebooks/blob/master/mardhund.ipynb) by Christopher Kullenberg, I decided to have a look on how the wild boar (vildsvin in Swedish, villisika in Finnish) is doing around here. Based on a few stays in Italian and French countryside, I can confirm that yes, there are wild boars in mainland Europe. In Finland, I haven't seen a single one yet. Perhaps they wander along the Eastern border?
+![Photo by Valentin Panzirsch, Wikipedia](https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/20160208054949%21Wildschein%2C_N%C3%A4he_Pulverstampftor_%28cropped%29.jpg/800px-20160208054949%21Wildschein%2C_N%C3%A4he_Pulverstampftor_%28cropped%29.jpg) 
 
-While at it, I decided to make use of the new R Notebook by RStudio. Having done a little R Markdown'ing before, watching [a helpful 45 min video tutorial](https://www.rstudio.com/resources/webinars/introducing-notebooks-with-r-markdown/) gave a head start.
+## Sweden
 
-First I went to [The Analysis portal for biodiversity data](https://www.analysisportal.se) like Christopher did, and downloaded data on this *Sus scrofa*.
+Inspired by recent news on a [fortcoming book by Hannah Lutz](https://www.hbl.fi/artikel/vildsvin-som-vag-till-sjalvkannedom/), and the notebook on [Raccoon dog in Sweden](https://github.com/christopherkullenberg/AnalysisportalNotebooks/blob/master/mardhund.ipynb) by Christopher Kullenberg, I decided to check what do we know about the wild boar population (vildsvin in Swedish, villisika in Finnish) in Sweden and Finland. 
+
+Based on a few stays in Italian and French countryside, I can confirm that yes, there indeed are wild boars in mainland Europe. In Finland, I haven't seen a single one yet myself. But they are here, both domesticated (or zoo) animals and wild ones. The wild wild boars are mostly arrived from Russia, or escaped from farms. 
+
+While at it, I decided to test the new R Notebook feature of RStudio. Having done a little R Markdown'ing before, watching [a helpful 45 min video tutorial](https://www.rstudio.com/resources/webinars/introducing-notebooks-with-r-markdown/) gave a head start.
+
+First I followed Christopher's steps and went to the Swedish [The Analysis portal for biodiversity data](https://www.analysisportal.se) for citizen science data on *Sus scrofa*.
 
 ```{r load, warning=FALSE}
-data <- read_excel("SpeciesObservations.xlsx", sheet = "SLW Data")
-nrow(data)
-colnames(data)
+data_se <- read_excel("SpeciesObservations.xlsx", sheet = "SLW Data")
+data_se$Start <- as.Date(data_se$Start, format = "%Y-%m-%d")
+
+nrow(data_se)
+colnames(data_se)
+min(data_se$Start)
+max(data_se$Start)
 ```
 
-The number of different variables in this citizen science data is impressive. Yet, seemingly many empty cells. What data should I expect NOT to find? To answer this question, the brand new [naniar package](https://github.com/njtierney/naniar) is of great help. 
+The number of different variables is impressive, and over 1600 observations quite an achievement. The time span is over 30 years.
+
+Yet, there are also seemingly many empty cells. What data should I expect NOT to find? To answer this question, the brand new [naniar package](https://github.com/njtierney/naniar) is of great help. 
 
 Let's take the first half of the columns first, and sort them by missingness.
 
 ```{r missing1}
-vis_miss(data[ , 1:as.integer(ncol(data)/2)], sort_miss = TRUE) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 48, 
+vis_miss(data_se[ , 1:as.integer(ncol(data_se)/2)], sort_miss = TRUE) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 48, 
         vjust = 1, hjust = 1, size = 7))
 
 ```
@@ -38,18 +49,17 @@ vis_miss(data[ , 1:as.integer(ncol(data)/2)], sort_miss = TRUE) + ggplot2::theme
 And then the rest.
 
 ```{r missing2}
-vis_miss(data[ , as.integer(ncol(data)/2+1):ncol(data)], sort_miss = TRUE) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 48, 
+vis_miss(data_se[ , as.integer(ncol(data_se)/2+1):ncol(data_se)], sort_miss = TRUE) + ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 48, 
         vjust = 1, hjust = 1, size = 7))
 ```
 
-It looks like the dataset is a little patchy on extra information like the number of observed animals, what they were doing etc. This is understandable. On the other hand, the core details if you like such as location and date are well represented. I'd guess that some of these fields are mandatory.
+It looks like the dataset is a little patchy on extra information like what the animals were doing, gender etc. This is understandable. On the other hand, the core details if you like such as location and date are well represented. I'd guess that some of these fields are mandatory.
 
-Next we need to transform dates, and then we can count daily statistics.
+Next, let's calculate daily statistics, and plot them.
 
 ```{r timeline}
-data$Start <- as.Date(data$Start, format = "%Y-%m-%d")
 
-dailysums <- data %>%
+dailysums <- data_se %>%
   rename(Date = Start) %>% 
   group_by(Date) %>% 
   summarise(Observations = n()) 
@@ -63,6 +73,7 @@ alltime_dailysums <- full_join(alltime_df, dailysums, by=c("Date"="Date"))
 alltime_dailysums$Observations <- ifelse(is.na(alltime_dailysums$Observations), 0, alltime_dailysums$Observations)
 
 rownames(alltime_dailysums) <- alltime_dailysums[[1]]
+
 dailysums.xts <- as.xts(alltime_dailysums, dateFormat = "Date")
 
 dygraph(dailysums.xts) %>%
@@ -86,18 +97,42 @@ dygraph(dailysums.xts) %>%
   dyEvent("2016-12-24", "Christmas", labelLoc = "top") %>%
   dyOptions(stepPlot=FALSE,
             connectSeparatedPoints = FALSE,
-            colors = RColorBrewer::brewer.pal(3, "Set2")) 
+            colors = RColorBrewer::brewer.pal(3, "Set2")) %>% 
+  dyRangeSelector(height = 20)
 
 
 ```
 
-Select a region to zoom in. This way, you can contemplate on whether the sightings happened to occur around bigger public holidays, say.
+To zoom in, use the slider, or draw a horizontal region. This way, we can contemplate on whether the sightings are clustered around bigger public holidays, say. 
 
-Where in Sweden have people seen these animals? Was it a herd, or just few individuals? What were they doing? 
+## Finland
+
+You can search and download animal observation data from the (beta) site of [Finnish Biodiversity Info Facility (FinBIF)](https://beta.laji.fi/observation/map?page=1). To get data, you need to register, and log in. When you have selected a set, an email is sent to you with a link to the downloading site. There is also an [API](https://api.laji.fi/explorer/), nicely documented thanks to [OpenAPI Specification](https://en.wikipedia.org/wiki/OpenAPI_Specification), but because I've got my access token only recently, I haven't had time to check the documentation that much.
+
+Citation for my downloaded dataset http://tun.fi/HBF.AD8DA752-1013-4AA2-8BC5-7AA21F0F4FF5 (haettu 12.1.2017).
+
+FinBIF is a joined achievement of several parties, so data includes also information on preserved specimens like skulls. Let's first filter observations.
+
+
+```{r data_fi}
+
+data_fi <- read.csv("rows_HBF.AD8DA752-1013-4AA2-8BC5-7AA21F0F4FF5.csv", stringsAsFactors = FALSE)
+
+data_fi <- data_fi %>% 
+  filter(Unit.RecordBasis == "HUMAN_OBSERVATION_UNSPECIFIED" & Gathering.CountryVerbatim %in% c("Suomi", "FI"))
+
+nrow(data_fi)
+```
+
+Compared to the Swedish dataset, the number of observations is very modest. Finland is famous for its volunteer birdwatchers, and the amount of longitudinal data from monitoring birds is massive. It is interesting why other animals get much less attention. I'd guess though that as a country, Finland is not a huge exception in this case. It's easy to understand why birding is so popular. Bird species abound, they are relatively easy to find and watch, and only few are nocturnal. Although around 30 bird species can legally be hunted in Finland, I'd say that in general, birds are not considered to be game like mammals. 
+
+In Finland, the main source for observational, non-scientific data on mammals is hunting organizations. I'd be more than happy if those citizens who do not hunt, would more actively look around, and register what they see.
+
+Lastly, let's put all data on the map. 
 
 ```{r map}
 
-data <- data %>% 
+data_se <- data_se %>% 
   mutate(Lat = as.numeric(gsub(",", ".", DecimalLatitude))) %>% 
   mutate(Lon = as.numeric(gsub(",", ".", DecimalLongitude))) %>% 
   mutate(Time = EventTime) %>% 
@@ -108,35 +143,50 @@ data <- data %>%
   mutate(Sex = ifelse(is.na(Sex), "N/A", Sex)) %>% 
   mutate(OccurrenceRemarks = ifelse(is.na(OccurrenceRemarks), "N/A", OccurrenceRemarks))
 
-max <- data %>% 
-  arrange(desc(Count)) %>% 
-  head()
+data_fi <- data_fi %>% 
+  mutate(Gathering.Date.Begin = as.Date(Gathering.Date.Begin, format = "%Y-%m-%d")) %>% 
+  mutate(Unit.Abundance = ifelse(Unit.Abundance == "", "N/A", Unit.Abundance)) %>%
+  mutate(Gathering.MunicipalityVerbatim = ifelse(Gathering.MunicipalityVerbatim == "", "N/A", Gathering.MunicipalityVerbatim)) %>% 
+  mutate(Gathering.BioProvinceVerbatim = ifelse(Gathering.BioProvinceVerbatim == "", "N/A", Gathering.BioProvinceVerbatim)) %>% 
+  mutate(Unit.Notes = ifelse(Unit.Notes == "", "N/A", Unit.Notes))
 
-leaflet(data) %>% 
+leaflet(data_se) %>% 
   addTiles() %>%
-  addCircles(lng = ~Lon, lat = ~Lat, weight = 2,
-    radius = ~sqrt(Count) * 30, popup = paste(sep = "<br/>", 
-                                          paste0("County: ",data$County), 
-                                          paste0("Date: ", data$Start), 
-                                          paste0("Time: ", data$Time),
-                                          paste0("Quantity: ", data$Quantity),
-                                          paste0("Life stage: ", data$LifeStage),
-                                          paste0("Behavior: ", data$Behavior), 
-                                          paste0("Sex: ", data$Sex), 
-                                          paste0("Remarks: ", data$OccurrenceRemarks))) %>% 
-  addMarkers(lng = max$Lon, lat = max$Lat, popup = paste(sep = "<br/>", 
-                                          paste0("County: ",max$County), 
-                                          paste0("Date: ", max$Start), 
-                                          paste0("Time: ", data$Time),
-                                          paste0("Quantity: ", max$Quantity),
-                                          paste0("Life stage: ", max$LifeStage),
-                                          paste0("Behavior: ", max$Behavior), 
-                                          paste0("Sex: ", max$Sex), 
-                                          paste0("Remarks: ", max$OccurrenceRemarks)))
+  addCircleMarkers(lng = ~Lon, lat = ~Lat, radius = ~sqrt(Count)*2, 
+                   color= ~ifelse(data_se$Count >= 40 , "red", 
+                                  ifelse(data_se$Count < 40 & data_se$Count > 20, "orange", 
+                                         "blue")),
+                   stroke = TRUE, 
+                   fillOpacity = 0.08,
+                   popup = paste(sep = "<br/>",
+                                paste0("County: ",data_se$County), 
+                                paste0("Date: ", data_se$Start), 
+                                paste0("Time: ", data_se$Time),
+                                paste0("Quantity: ", data_se$Quantity),
+                                paste0("Life stage: ", data_se$LifeStage),
+                                paste0("Behavior: ", data_se$Behavior), 
+                                paste0("Sex: ", data_se$Sex), 
+                                paste0("Remarks: ", data_se$OccurrenceRemarks))) %>% 
+  addMarkers(lng = data_fi$Gathering.Conversions.WGS84CenterPoint.Lon.E, lat = data_fi$Gathering.Conversions.WGS84CenterPoint.Lat.N,
+             popup = paste(sep = "<br/>", 
+                           paste0("Country: ",data_fi$Gathering.CountryVerbatim), 
+                           paste0("Municipality: ", data_fi$Gathering.MunicipalityVerbatim),
+                           paste0("Province: ", data_fi$Gathering.BioProvinceVerbatim), 
+                           paste0("Date: ", data_fi$Gathering.Date.Begin), 
+                           paste0("Quantity: ", data_fi$Unit.Abundance),
+                           paste0("Remarks: ", data_fi$Unit.Notes)))
 ```
 
-Some of the observed groups are astonishingly big. To let these stand out on the map, I put a blue marker on those locations. One of them is in the outskirts of Stockholm, the capital of Sweden! From the popup we learn that here, the number of animals is due to free lunch. They are fed.
+The user experience would benefit from reducing the number of data points but here we go. Sorry.
 
-The most Northern observation comes near Umeå. 
+In Sweden, some of the groups are surprisingly big, even in the outskirts of Stockholm! On the map, the biggest recorded herds have a red stroke, the next biggest orange, and the rest are blue.
 
-Finland? This part is yet to be done. First I need to find some open data.
+From the popups of the red circles we learn that the bigger herd, the more this is because of feeding. 
+
+The most Northern - and rather lone - observation is near Umeå. As always, sta
+
+Note that in the Finnish dataset, there are few observations that are actually not from Finland at all, but from Estonia, Poland, Russia, and Germany. These ones have no coordinates, so they are not shown on the map. 
+
+Estonia is a special case at the moment. Wild boar hunters returning from there are under strict control by the Finnish authorities because of [African swine feaver](http://ec.europa.eu/food/animals/animal-diseases/control-measures/asf/what-is-asf_en). 
+
+
