@@ -191,4 +191,4 @@ Note that in the Finnish dataset, there are few observations that are actually n
 
 Estonia is a special case at the moment. Finnish hunters returning from wild boar safaris in Estonia are under strict control by the Finnish authorities because of [African swine feaver](http://ec.europa.eu/food/animals/animal-diseases/control-measures/asf/what-is-asf_en). 
 
-
+EDIT 2017-01-16: Check [Andrew Clark's revamped version](https://t.co/hqXRxFVLek) of this notebook. He clustered the data points on the map, and published the notebook on [RPubs](https://rpubs.com/). Note differences in render quality, and how much less cluttered the map now is. What you cannot now see at first glance though, is the top locations of herd sizes. But if you mainly want to drill down to specific observations, then `clusterOptions = markerClusterOptions()` is definitely the way to go on a leaflet map.
