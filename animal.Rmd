@@ -25,7 +25,7 @@ While at it, I decided to test the new R Notebook feature of RStudio. Having don
 First I followed Christopher's steps and went to the Swedish [The Analysis portal for biodiversity data](https://www.analysisportal.se) for citizen science data on *Sus scrofa*.
 
 ```{r load, warning=FALSE}
-data_se <- read_excel("SpeciesObservations.xlsx", sheet = "SLW Data")
+data_se <- read_excel("data/SpeciesObservations.xlsx", sheet = "SLW Data")
 data_se$Start <- as.Date(data_se$Start, format = "%Y-%m-%d")
 
 nrow(data_se)
